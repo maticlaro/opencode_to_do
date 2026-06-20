@@ -1,66 +1,65 @@
 import { useState, useEffect } from 'react';
-import AddTodo from './components/AddTodo';
-import SearchBar from './components/SearchBar';
-import TodoList from './components/TodoList';
+import ListView from './components/ListView';
+import TodoView from './components/TodoView';
 
 function App() {
-  const [todos, setTodos] = useState([]);
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all');
-
-  const fetchTodos = async () => {
-    const params = new URLSearchParams();
-    if (query) params.set('q', query);
-    if (filter !== 'all') params.set('filter', filter);
-    const res = await fetch(`/api/todos?${params}`);
-    setTodos(await res.json());
-  };
+  const [lists, setLists] = useState([]);
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [selectedListTitle, setSelectedListTitle] = useState('');
 
   useEffect(() => {
-    fetchTodos();
-  }, [query, filter]);
+    fetch('/api/lists').then(res => res.json()).then(setLists);
+  }, []);
 
-  const addTodo = async (text) => {
-    const res = await fetch('/api/todos', {
+  const createList = async (title) => {
+    const res = await fetch('/api/lists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
+      body: JSON.stringify({ title })
     });
-    const todo = await res.json();
-    setTodos([...todos, todo]);
+    const list = await res.json();
+    setLists([...lists, list]);
   };
 
-  const toggleTodo = async (id, completed) => {
-    const res = await fetch(`/api/todos/${id}`, {
+  const editList = async (id, title) => {
+    const res = await fetch(`/api/lists/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ completed })
+      body: JSON.stringify({ title })
     });
     const updated = await res.json();
-    setTodos(todos.map(t => t.id === id ? updated : t));
+    setLists(lists.map(l => l.id === id ? updated : l));
+    if (selectedListId === id) setSelectedListTitle(title);
   };
 
-  const editTodo = async (id, text) => {
-    const res = await fetch(`/api/todos/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    });
-    const updated = await res.json();
-    setTodos(todos.map(t => t.id === id ? updated : t));
+  const deleteList = async (id) => {
+    await fetch(`/api/lists/${id}`, { method: 'DELETE' });
+    setLists(lists.filter(l => l.id !== id));
   };
 
-  const deleteTodo = async (id) => {
-    await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-    setTodos(todos.filter(t => t.id !== id));
+  const selectList = (id) => {
+    const list = lists.find(l => l.id === id);
+    setSelectedListId(id);
+    setSelectedListTitle(list?.title || '');
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: '40px auto', fontFamily: 'sans-serif' }}>
-      <h1>Lista de Tareas</h1>
-      <AddTodo onAdd={addTodo} />
-      <SearchBar query={query} filter={filter} onQueryChange={setQuery} onFilterChange={setFilter} />
-      <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={editTodo} />
+    <div style={{ maxWidth: 700, margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
+      {selectedListId ? (
+        <TodoView
+          listId={selectedListId}
+          listTitle={selectedListTitle}
+          onBack={() => setSelectedListId(null)}
+        />
+      ) : (
+        <ListView
+          lists={lists}
+          onSelect={selectList}
+          onCreate={createList}
+          onEdit={editList}
+          onDelete={deleteList}
+        />
+      )}
     </div>
   );
 }
