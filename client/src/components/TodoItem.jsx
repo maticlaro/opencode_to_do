@@ -1,8 +1,11 @@
 import { useState } from 'react';
 
-function TodoItem({ todo, onToggle, onDelete, onEdit }) {
+function TodoItem({ todo, onToggle, onDelete, onEdit, onMove, allLists, currentListId }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(todo.text);
+  const [showMove, setShowMove] = useState(false);
+
+  const otherLists = allLists.filter(l => l.id !== currentListId);
 
   const handleSave = () => {
     if (editText.trim()) {
@@ -42,6 +45,26 @@ function TodoItem({ todo, onToggle, onDelete, onEdit }) {
         >
           {todo.text}
         </span>
+      )}
+      {showMove && otherLists.length > 0 && (
+        <select
+          autoFocus
+          defaultValue=""
+          onChange={e => {
+            onMove(todo.id, Number(e.target.value));
+            setShowMove(false);
+          }}
+          onBlur={() => setShowMove(false)}
+          style={{ fontSize: 12, padding: 2 }}
+        >
+          <option value="" disabled>Mover a...</option>
+          {otherLists.map(l => (
+            <option key={l.id} value={l.id}>{l.title}</option>
+          ))}
+        </select>
+      )}
+      {otherLists.length > 0 && (
+        <button onClick={() => setShowMove(!showMove)} style={{ fontSize: 12 }}>Mover</button>
       )}
       <button onClick={() => onDelete(todo.id)}>Eliminar</button>
     </li>

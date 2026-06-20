@@ -50,6 +50,7 @@ function App() {
           listId={selectedListId}
           listTitle={selectedListTitle}
           onBack={() => setSelectedListId(null)}
+          allLists={lists}
         />
       ) : (
         <ListView

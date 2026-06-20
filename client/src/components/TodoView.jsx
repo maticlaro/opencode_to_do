@@ -3,7 +3,7 @@ import AddTodo from './AddTodo';
 import SearchBar from './SearchBar';
 import TodoList from './TodoList';
 
-function TodoView({ listId, listTitle, onBack }) {
+function TodoView({ listId, listTitle, onBack, allLists }) {
   const [todos, setTodos] = useState([]);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
@@ -55,6 +55,17 @@ function TodoView({ listId, listTitle, onBack }) {
     setTodos(todos.filter(t => t.id !== id));
   };
 
+  const moveTodo = async (todoId, toListId) => {
+    const res = await fetch(`/api/lists/${listId}/todos/${todoId}/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ toListId })
+    });
+    if (res.ok) {
+      setTodos(todos.filter(t => t.id !== todoId));
+    }
+  };
+
   return (
     <div>
       <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, marginBottom: 16 }}>
@@ -63,7 +74,7 @@ function TodoView({ listId, listTitle, onBack }) {
       <h1>{listTitle}</h1>
       <AddTodo onAdd={addTodo} />
       <SearchBar query={query} filter={filter} onQueryChange={setQuery} onFilterChange={setFilter} />
-      <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={editTodo} />
+      <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} onEdit={editTodo} onMove={moveTodo} allLists={allLists} currentListId={listId} />
     </div>
   );
 }

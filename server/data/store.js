@@ -1,66 +1,86 @@
-let lists = [];
-let nextListId = 1;
-let nextTodoId = 1;
+import { List } from '../models/List.js';
 
 // Lists CRUD
-export const getLists = () => lists.map(({ id, title, todos }) => ({ id, title, count: todos.length }));
-
-export const getList = (id) => lists.find(l => l.id === id) || null;
-
-export const createList = (title) => {
-  const list = { id: nextListId++, title, todos: [] };
-  lists.push(list);
-  return { id: list.id, title: list.title, count: 0 };
+export const getLists = async () => {
+  const lists = await List.find().sort({ createdAt: -1 });
+  return lists.map(l => ({ id: l._id, title: l.title, count: l.todos.length }));
 };
 
-export const updateList = (id, title) => {
-  const list = lists.find(l => l.id === id);
+export const getList = async (id) => {
+  return await List.findById(id);
+};
+
+export const createList = async (title) => {
+  const list = await List.create({ title, todos: [] });
+  return { id: list._id, title: list.title, count: 0 };
+};
+
+export const updateList = async (id, title) => {
+  const list = await List.findByIdAndUpdate(id, { title }, { new: true });
   if (!list) return null;
-  list.title = title;
-  return { id: list.id, title: list.title, count: list.todos.length };
+  return { id: list._id, title: list.title, count: list.todos.length };
 };
 
-export const deleteList = (id) => {
-  const index = lists.findIndex(l => l.id === id);
-  if (index === -1) return null;
-  const [deleted] = lists.splice(index, 1);
-  return { id: deleted.id, title: deleted.title };
+export const deleteList = async (id) => {
+  const list = await List.findByIdAndDelete(id);
+  if (!list) return null;
+  return { id: list._id, title: list.title };
 };
 
 // Todos within a list
-export const getListTodos = (listId) => {
-  const list = lists.find(l => l.id === listId);
-  return list ? list.todos : null;
+export const getListTodos = async (listId) => {
+  const list = await List.findById(listId);
+  if (!list) return null;
+  return list.todos.map(t => ({ id: t._id, text: t.text, completed: t.completed }));
 };
 
-export const addTodoToList = (listId, text) => {
-  const list = lists.find(l => l.id === listId);
+export const addTodoToList = async (listId, text) => {
+  const list = await List.findById(listId);
   if (!list) return null;
-  const todo = { id: nextTodoId++, text, completed: false };
+  const todo = list.todos.create({ text, completed: false });
   list.todos.push(todo);
-  return todo;
+  await list.save();
+  return { id: todo._id, text: todo.text, completed: todo.completed };
 };
 
-export const updateTodoInList = (listId, todoId, updates) => {
-  const list = lists.find(l => l.id === listId);
+export const updateTodoInList = async (listId, todoId, updates) => {
+  const list = await List.findById(listId);
   if (!list) return null;
-  const todo = list.todos.find(t => t.id === todoId);
+  const todo = list.todos.id(todoId);
   if (!todo) return null;
-  Object.assign(todo, updates);
-  return todo;
+  if (updates.text !== undefined) todo.text = updates.text;
+  if (updates.completed !== undefined) todo.completed = updates.completed;
+  await list.save();
+  return { id: todo._id, text: todo.text, completed: todo.completed };
 };
 
-export const deleteTodoFromList = (listId, todoId) => {
-  const list = lists.find(l => l.id === listId);
+export const deleteTodoFromList = async (listId, todoId) => {
+  const list = await List.findById(listId);
   if (!list) return null;
-  const index = list.todos.findIndex(t => t.id === todoId);
-  if (index === -1) return null;
-  const [deleted] = list.todos.splice(index, 1);
-  return deleted;
+  const todo = list.todos.id(todoId);
+  if (!todo) return null;
+  const result = { id: todo._id, text: todo.text, completed: todo.completed };
+  list.todos.pull(todoId);
+  await list.save();
+  return result;
 };
 
-export const searchTodosInList = (listId, query, filter) => {
-  const list = lists.find(l => l.id === listId);
+export const moveTodoToList = async (fromListId, toListId, todoId) => {
+  const fromList = await List.findById(fromListId);
+  const toList = await List.findById(toListId);
+  if (!fromList || !toList) return null;
+  const todo = fromList.todos.id(todoId);
+  if (!todo) return null;
+  const todoData = { text: todo.text, completed: todo.completed };
+  fromList.todos.pull(todoId);
+  toList.todos.push(todoData);
+  await fromList.save();
+  await toList.save();
+  return { id: todo._id, text: todoData.text, completed: todoData.completed };
+};
+
+export const searchTodosInList = async (listId, query, filter) => {
+  const list = await List.findById(listId);
   if (!list) return null;
   let result = list.todos;
   if (query) {
@@ -72,5 +92,5 @@ export const searchTodosInList = (listId, query, filter) => {
   } else if (filter === 'pending') {
     result = result.filter(t => !t.completed);
   }
-  return result;
+  return result.map(t => ({ id: t._id, text: t.text, completed: t.completed }));
 };
