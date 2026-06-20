@@ -1,9 +1,13 @@
 import { Router } from 'express';
-import { getTodos, addTodo, updateTodo, deleteTodo } from '../data/store.js';
+import { getTodos, addTodo, updateTodo, deleteTodo, searchTodos } from '../data/store.js';
 
 const router = Router();
 
 router.get('/', (req, res) => {
+  const { q, filter } = req.query;
+  if (q || filter) {
+    return res.json(searchTodos(q, filter));
+  }
   res.json(getTodos());
 });
 

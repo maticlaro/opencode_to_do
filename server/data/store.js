@@ -22,3 +22,20 @@ export const deleteTodo = (id) => {
   const [deleted] = todos.splice(index, 1);
   return deleted;
 };
+
+export const searchTodos = (query, filter) => {
+  let result = todos;
+
+  if (query) {
+    const q = query.toLowerCase();
+    result = result.filter(t => t.text.toLowerCase().includes(q));
+  }
+
+  if (filter === 'completed') {
+    result = result.filter(t => t.completed);
+  } else if (filter === 'pending') {
+    result = result.filter(t => !t.completed);
+  }
+
+  return result;
+};
