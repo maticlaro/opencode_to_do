@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getLists, createList, updateList, deleteList } from '../data/store.js';
+import { getLists, createList, updateList, deleteList } from '../services/store.js';
 
 const router = Router();
 

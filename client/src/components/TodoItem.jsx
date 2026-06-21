@@ -51,7 +51,7 @@ function TodoItem({ todo, onToggle, onDelete, onEdit, onMove, allLists, currentL
           autoFocus
           defaultValue=""
           onChange={e => {
-            onMove(todo.id, Number(e.target.value));
+            onMove(todo.id, e.target.value);
             setShowMove(false);
           }}
           onBlur={() => setShowMove(false)}

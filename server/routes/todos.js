@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getListTodos, addTodoToList, updateTodoInList, deleteTodoFromList, searchTodosInList, moveTodoToList } from '../data/store.js';
+import { getListTodos, addTodoToList, updateTodoInList, deleteTodoFromList, searchTodosInList, moveTodoToList } from '../services/store.js';
 
 const router = Router({ mergeParams: true });
 
